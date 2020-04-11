@@ -21,9 +21,9 @@
 /**
  * @param string $imagePath - either a local absolute/relative path, or a remote URL (e.g. http://...flickr.com/.../ ). See SECURITY note above.
  * @param array $opts  (w(pixels), h(pixels), crop(boolean), scale(boolean), thumbnail(boolean), maxOnly(boolean), canvas-color(#abcabc), output-filename(string), cache_http_minutes(int))
- * @return new URL for resized image.
+ * @return string|false string: new URL for resized image, false: implies failure
  */
-function resize($imagePath,$opts=null){
+function resize($imagePath, $opts = []){
 
 	# start configuration
 	$cacheFolder = './cache/'; # path to your cache folder, must be writeable by web server
@@ -71,6 +71,9 @@ function resize($imagePath,$opts=null){
 		endif;
 	endif;
 
+    $w = null;
+    $h = null;
+
 	if(isset($opts['w'])): $w = $opts['w']; endif;
 	if(isset($opts['h'])): $h = $opts['h']; endif;
 
@@ -93,7 +96,7 @@ function resize($imagePath,$opts=null){
 
 	$create = true;
 
-    if(file_exists($newPath) == true):
+    if(is_string($newPath) && file_exists($newPath) == true):
         $create = false;
         $origFileTime = date("YmdHis",filemtime($imagePath));
         $newFileTime = date("YmdHis",filemtime($newPath));
@@ -121,20 +124,20 @@ function resize($imagePath,$opts=null){
 			endif;
 
 			if(true === $opts['scale']):
-				$cmd = $path_to_convert ." ". escapeshellarg($imagePath) ." -resize ". escapeshellarg($resize) . 
-				" -quality ". escapeshellarg($opts['quality']) . " " . escapeshellarg($newPath);
+				$cmd = $path_to_convert ." ". escapeshellarg($imagePath) ." -resize ". escapeshellarg(''. $resize) . 
+				" -quality ". escapeshellarg('' . $opts['quality']) . " " . escapeshellarg('' . $newPath);
 			else:
-				$cmd = $path_to_convert." ". escapeshellarg($imagePath) ." -resize ". escapeshellarg($resize) . 
+				$cmd = $path_to_convert." ". escapeshellarg($imagePath) ." -resize ". escapeshellarg('' . $resize) . 
 				" -size ". escapeshellarg($w ."x". $h) . 
 				" xc:". escapeshellarg($opts['canvas-color']) .
-				" +swap -gravity center -composite -quality ". escapeshellarg($opts['quality'])." ".escapeshellarg($newPath);
+				" +swap -gravity center -composite -quality ". escapeshellarg('' . $opts['quality'])." ".escapeshellarg('' . $newPath);
 			endif;
 						
 		else:
 			$cmd = $path_to_convert." " . escapeshellarg($imagePath) . 
 			" -thumbnail ". (!empty($h) ? 'x':'') . $w ."". 
 			(isset($opts['maxOnly']) && $opts['maxOnly'] == true ? "\>" : "") . 
-			" -quality ". escapeshellarg($opts['quality']) ." ". escapeshellarg($newPath);
+			" -quality ". escapeshellarg($opts['quality']) ." ". escapeshellarg('' . $newPath);
 		endif;
 
 		$c = exec($cmd, $output, $return_code);
@@ -145,6 +148,6 @@ function resize($imagePath,$opts=null){
 	endif;
 
 	# return cache file path
-	return str_replace($_SERVER['DOCUMENT_ROOT'],'',$newPath);
+	return str_replace($_SERVER['DOCUMENT_ROOT'],'','' . $newPath);
 	
 }
